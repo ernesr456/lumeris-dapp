@@ -21,6 +21,6 @@ export {
 // Other Backgrounds
 export { TradingNebulaBackground } from "./TradingNebulaBackground";
 export { LotteryWheelBackground } from "./LotteryWheelBackground";
-export { TreasureVaultBackground } from "./TreasureVaultBackground";
+// export { TreasureVaultBackground } from "./TreasureVaultBackground";
 export { NeuralNetworkBackground } from "./NeuralNetworkBackground";
 export { SolarSystemBackground } from "../SolarSystemBackground";
