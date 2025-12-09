@@ -1,5 +1,5 @@
 const WebSocket = require('ws');
-const { pubClient, subClient } = require('../config/redis');
+const { publisher, subscriber } = require('../config/redis');
 const { setupWebSocketHandlers } = require('../websocket/handlers');
 
 let wssInstance = null;
@@ -9,7 +9,7 @@ const initWebSocket = async (server) => {
   wssInstance = new WebSocket.Server({ server });
 
   // Subscribe to Redis channel for match updates
-  await subClient.subscribe('match-updates', (raw) => {
+  await subscriber.subscribe('match-updates', (raw) => {
     try {
       const payload = JSON.parse(raw);
       broadcast(payload);
@@ -48,26 +48,28 @@ const startHeartbeat = () => {
 };
 
 // Broadcast message to all connected WebSocket clients
-const broadcast = (data) => {
-  if (!wssInstance) return;
+const broadcast = async (data) => {
+  if (!wss) return;
 
-  const message = JSON.stringify({
-    type: 'game_update',
-    data
-  });
+  // Save to MongoDB
+  try {
+    await Match.create(data);
+    console.log('✅ Match saved to DB');
+  } catch (err) {
+    console.error('❌ Failed to save match:', err);
+  }
 
-  wssInstance.clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
+  // Broadcast to clients
+  wss.clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) client.send(payload);
   });
 };
 
 // Publish updates to Redis channel (backend-to-backend)
 const publishMatchUpdate = async (update) => {
-  if (!pubClient.isOpen) return;
+  if (!publisher.isOpen) return;
 
-  await pubClient.publish('match-updates', JSON.stringify(update));
+  await publisher.publish('match-updates', JSON.stringify(update));
 };
 
 module.exports = {
